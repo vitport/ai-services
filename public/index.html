@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Services Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: #16213e;
+      border-bottom: 2px solid #e94560;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    header h1 {
+      font-size: 1.6rem;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+    .version-badge {
+      background: #e94560;
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-family: monospace;
+    }
+    .lan-badge {
+      margin-left: auto;
+      background: #0f3460;
+      border: 1px solid #4a90d9;
+      color: #4a90d9;
+      font-size: 0.78rem;
+      font-family: monospace;
+      padding: 4px 12px;
+      border-radius: 6px;
+    }
+
+    /* ── Main layout ── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 24px 40px;
+    }
+
+    /* ── Section headers ── */
+    .section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #e94560;
+      margin-bottom: 14px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #2a2a4a;
+    }
+
+    /* ── Status cards ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 700px) { .cards-grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #16213e;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .card-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 12px;
+    }
+    .card-value {
+      font-family: monospace;
+      font-size: 1rem;
+      color: #c8d6e5;
+      margin-bottom: 6px;
+      word-break: break-all;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+    .badge-online  { background: #1a4a2a; color: #4cdf7a; border: 1px solid #4cdf7a; }
+    .badge-offline { background: #4a1a1a; color: #df4c4c; border: 1px solid #df4c4c; }
+    .badge-pending { background: #3a3a1a; color: #dfc44c; border: 1px solid #dfc44c; }
+
+    .model-list { margin-top: 8px; }
+    .model-item {
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #8ab4f8;
+      padding: 2px 0;
+    }
+    .model-empty {
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: #666;
+      margin-top: 6px;
+    }
+
+    /* ── Refresh bar ── */
+    .refresh-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .refresh-btn {
+      background: #e94560;
+      color: #fff;
+      border: none;
+      padding: 7px 18px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .refresh-btn:hover { background: #c73050; }
+    .refresh-info {
+      font-size: 0.78rem;
+      color: #666;
+      font-family: monospace;
+    }
+
+    /* ── Routes table ── */
+    .routes-section { margin-bottom: 32px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #16213e;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    th {
+      background: #0f1c35;
+      font-size: 0.68rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #888;
+      padding: 10px 16px;
+      text-align: left;
+    }
+    td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #1e2a40;
+      font-size: 0.88rem;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #1a2540; }
+
+    .method-get  { background: #1a3a1a; color: #4cdf7a; border: 1px solid #4cdf7a; font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 4px; font-family: monospace; }
+    .method-post { background: #1a2a4a; color: #4a90d9; border: 1px solid #4a90d9; font-weight: 700; font-size: 0.68rem; padding: 2px 8px; border-radius: 4px; font-family: monospace; }
+
+    .route-path { font-family: monospace; color: #c8d6e5; }
+    .route-note { font-size: 0.75rem; color: #666; font-style: italic; }
+
+    /* ── Projects section ── */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 700px) { .projects-grid { grid-template-columns: 1fr; } }
+
+    .project-card {
+      background: #16213e;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 20px;
+      border-left: 3px solid #e94560;
+    }
+    .project-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .project-port {
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: #8ab4f8;
+      margin-bottom: 10px;
+    }
+    .badge-ready {
+      background: #1a3a3a;
+      color: #4cd9d9;
+      border: 1px solid #4cd9d9;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      border-radius: 10px;
+      text-transform: uppercase;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 0.78rem;
+      color: #444;
+      border-top: 1px solid #2a2a4a;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🤖 AI Services</h1>
+  <span class="version-badge">v1.0.0</span>
+  <span class="lan-badge">🌐 LAN: http://192.168.1.2:12345</span>
+</header>
+
+<main>
+
+  <!-- Refresh bar -->
+  <div class="refresh-bar">
+    <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+    <span class="refresh-info" id="last-refresh">Auto-refresh every 30s</span>
+  </div>
+
+  <!-- Status Cards -->
+  <div class="section-title">Service Status</div>
+  <div class="cards-grid">
+
+    <div class="card" id="card-server">
+      <div class="card-title">Server Status</div>
+      <div class="card-value" id="srv-version">—</div>
+      <div class="card-value" id="srv-uptime" style="font-size:0.85rem;color:#888">uptime: —</div>
+      <span class="badge badge-pending" id="srv-badge">CHECKING...</span>
+    </div>
+
+    <div class="card" id="card-ollama">
+      <div class="card-title">Ollama Status</div>
+      <div class="model-list" id="ollama-models">
+        <div class="model-empty">Checking...</div>
+      </div>
+      <span class="badge badge-pending" id="ollama-badge">CHECKING...</span>
+    </div>
+
+    <div class="card" id="card-config">
+      <div class="card-title">Config</div>
+      <div class="card-value">Port: <span style="color:#e94560" id="cfg-port">12345</span></div>
+      <div class="card-value" style="font-size:0.82rem" id="cfg-ollama">Ollama: —</div>
+    </div>
+
+  </div>
+
+  <!-- Routes Table -->
+  <div class="routes-section">
+    <div class="section-title">Available Routes</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Path</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><span class="method-get">GET</span></td><td class="route-path">/health</td><td>Service health check + uptime</td></tr>
+        <tr><td><span class="method-get">GET</span></td><td class="route-path">/ollama/status</td><td>List loaded Ollama models</td></tr>
+        <tr><td><span class="method-post">POST</span></td><td class="route-path">/ollama/generate</td><td>Generate text via Ollama</td></tr>
+        <tr><td><span class="method-post">POST</span></td><td class="route-path">/ollama/release</td><td>Release model from VRAM</td></tr>
+        <tr><td><span class="method-get">GET</span></td><td class="route-path">/api/ollama/status <span class="route-note">alias</span></td><td>Backward compat — Recipe Book / Timedox / HR</td></tr>
+        <tr><td><span class="method-post">POST</span></td><td class="route-path">/api/ollama/generate <span class="route-note">alias</span></td><td>Backward compat — Recipe Book / Timedox / HR</td></tr>
+        <tr><td><span class="method-post">POST</span></td><td class="route-path">/api/ollama/release <span class="route-note">alias</span></td><td>Backward compat — Recipe Book / Timedox / HR</td></tr>
+        <tr><td><span class="method-get">GET</span></td><td class="route-path">/api/ollama/host <span class="route-note">alias</span></td><td>Returns configured Ollama host URL</td></tr>
+        <tr><td><span class="method-get">GET</span></td><td class="route-path">/api/config/search</td><td>Search API keys for SearchEngine.js</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Connected Projects -->
+  <div class="section-title">Connected Projects</div>
+  <div class="projects-grid">
+    <div class="project-card">
+      <div class="project-name">📖 Recipe Book</div>
+      <div class="project-port">Port: 3000 (typical)</div>
+      <span class="badge-ready">Ready to migrate</span>
+    </div>
+    <div class="project-card">
+      <div class="project-name">⏱ Timedox AI</div>
+      <div class="project-port">Port: 3001 (typical)</div>
+      <span class="badge-ready">Ready to migrate</span>
+    </div>
+    <div class="project-card">
+      <div class="project-name">👥 HR Project</div>
+      <div class="project-port">Port: 3002 (typical)</div>
+      <span class="badge-ready">Ready to migrate</span>
+    </div>
+  </div>
+
+</main>
+
+<footer>Zeev &amp; Vitaly — May 2026</footer>
+
+<script>
+  const BASE = 'http://localhost:12345';
+
+  async function loadHealth() {
+    try {
+      const r = await fetch(BASE + '/health');
+      const d = await r.json();
+      document.getElementById('srv-version').textContent = 'ai-services v' + (d.version || '?');
+      document.getElementById('srv-uptime').textContent = 'uptime: ' + formatUptime(d.uptime || 0);
+      document.getElementById('cfg-ollama').textContent = 'Ollama: ' + (d.ollama || '—');
+      const badge = document.getElementById('srv-badge');
+      badge.textContent = 'ONLINE';
+      badge.className = 'badge badge-online';
+    } catch (e) {
+      document.getElementById('srv-version').textContent = 'Unreachable';
+      const badge = document.getElementById('srv-badge');
+      badge.textContent = 'OFFLINE';
+      badge.className = 'badge badge-offline';
+    }
+  }
+
+  async function loadOllama() {
+    const container = document.getElementById('ollama-models');
+    const badge = document.getElementById('ollama-badge');
+    try {
+      const r = await fetch(BASE + '/ollama/status');
+      const d = await r.json();
+      if (d.models && d.models.length > 0) {
+        container.innerHTML = d.models.map(m =>
+          `<div class="model-item">▸ ${m.name || m.model || JSON.stringify(m)}</div>`
+        ).join('');
+        badge.textContent = d.models.length + ' MODEL' + (d.models.length !== 1 ? 'S' : '');
+        badge.className = 'badge badge-online';
+      } else {
+        container.innerHTML = '<div class="model-empty">No models loaded</div>';
+        badge.textContent = 'ONLINE (empty)';
+        badge.className = 'badge badge-online';
+      }
+    } catch (e) {
+      container.innerHTML = '<div class="model-empty">Cannot reach Ollama</div>';
+      badge.textContent = 'OFFLINE';
+      badge.className = 'badge badge-offline';
+    }
+  }
+
+  function formatUptime(s) {
+    if (s < 60) return s + 's';
+    if (s < 3600) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+    return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
+  }
+
+  function loadAll() {
+    loadHealth();
+    loadOllama();
+    document.getElementById('last-refresh').textContent =
+      'Last refresh: ' + new Date().toLocaleTimeString();
+  }
+
+  loadAll();
+  setInterval(loadAll, 30000);
+</script>
+</body>
+</html>

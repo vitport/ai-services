@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Services — Test Suite (Series 1)</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #1a1a2e;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      padding: 0 0 40px;
+    }
+
+    header {
+      background: #16213e;
+      border-bottom: 2px solid #e94560;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    header h1 { font-size: 1.4rem; color: #fff; }
+    .series-badge {
+      background: #e94560;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-family: monospace;
+    }
+
+    main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 28px 20px;
+    }
+
+    /* ── Top bar ── */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .run-btn {
+      background: #e94560;
+      color: #fff;
+      border: none;
+      padding: 9px 24px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .run-btn:hover:not(:disabled) { background: #c73050; }
+    .run-btn:disabled { background: #555; cursor: not-allowed; }
+
+    .dashboard-btn {
+      background: transparent;
+      color: #4a90d9;
+      border: 1px solid #4a90d9;
+      padding: 8px 18px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+    .dashboard-btn:hover { background: #1a2a4a; }
+
+    .status-text {
+      font-size: 0.82rem;
+      color: #666;
+      font-family: monospace;
+    }
+
+    /* ── Test items ── */
+    .test-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px; }
+
+    .test-item {
+      background: #16213e;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: 56px 1fr auto;
+      gap: 12px;
+      align-items: start;
+    }
+    .test-item.running { border-color: #dfc44c; }
+    .test-item.pass    { border-left: 3px solid #4cdf7a; }
+    .test-item.fail    { border-left: 3px solid #df4c4c; }
+
+    .test-num {
+      font-family: monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #e94560;
+      background: #2a1a2a;
+      border-radius: 6px;
+      padding: 3px 6px;
+      text-align: center;
+      margin-top: 2px;
+    }
+
+    .test-body {}
+    .test-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+    .test-desc {
+      font-size: 0.78rem;
+      color: #666;
+      font-family: monospace;
+      margin-bottom: 6px;
+    }
+    .test-detail {
+      font-size: 0.82rem;
+      font-family: monospace;
+      color: #8ab4f8;
+      display: none;
+    }
+    .test-detail.visible { display: block; }
+    .test-detail.err { color: #df7070; }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 3px 10px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      margin-top: 2px;
+    }
+    .badge-idle    { background: #2a2a3a; color: #888; }
+    .badge-running { background: #3a3a1a; color: #dfc44c; border: 1px solid #dfc44c; }
+    .badge-pass    { background: #1a4a2a; color: #4cdf7a; border: 1px solid #4cdf7a; }
+    .badge-fail    { background: #4a1a1a; color: #df4c4c; border: 1px solid #df4c4c; }
+
+    /* ── Summary ── */
+    .summary {
+      background: #16213e;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 20px 24px;
+      display: none;
+    }
+    .summary.visible { display: block; }
+    .summary-title {
+      font-size: 0.68rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 10px;
+    }
+    .summary-score {
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: monospace;
+    }
+    .score-perfect { color: #4cdf7a; }
+    .score-good    { color: #dfc44c; }
+    .score-bad     { color: #df4c4c; }
+    .summary-sub {
+      font-size: 0.82rem;
+      color: #888;
+      margin-top: 4px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.76rem;
+      color: #444;
+      border-top: 1px solid #2a2a4a;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🧪 AI Services — Test Suite</h1>
+  <span class="series-badge">SERIES 1 — Infrastructure</span>
+</header>
+
+<main>
+  <div class="top-bar">
+    <button class="run-btn" id="run-btn" onclick="runAll()">▶ Run All Tests</button>
+    <a class="dashboard-btn" href="http://localhost:12345/">📊 View Dashboard</a>
+    <span class="status-text" id="status-text">5 tests ready</span>
+  </div>
+
+  <div class="test-list" id="test-list"></div>
+
+  <div class="summary" id="summary">
+    <div class="summary-title">Results</div>
+    <div class="summary-score" id="summary-score"></div>
+    <div class="summary-sub" id="summary-sub"></div>
+  </div>
+</main>
+
+<footer>Zeev &amp; Vitaly — May 2026 &nbsp;|&nbsp; ai-services v1.0.0</footer>
+
+<script>
+  const BASE = window.location.origin;
+
+  const TESTS = [
+    {
+      id: '1.1',
+      name: 'Server Health Check',
+      desc: 'GET /health → status === "ok" AND version exists',
+      run: async () => {
+        const r = await fetch(BASE + '/health');
+        const d = await r.json();
+        if (d.status !== 'ok') throw new Error(`status = "${d.status}", expected "ok"`);
+        if (!d.version) throw new Error('version field missing');
+        return `status: "${d.status}", version: "${d.version}", service: "${d.service}"`;
+      }
+    },
+    {
+      id: '1.2',
+      name: 'Health Returns Uptime',
+      desc: 'GET /health → uptime is a number >= 0',
+      run: async () => {
+        const r = await fetch(BASE + '/health');
+        const d = await r.json();
+        if (typeof d.uptime !== 'number') throw new Error(`uptime type = ${typeof d.uptime}, expected number`);
+        if (d.uptime < 0) throw new Error(`uptime = ${d.uptime}, expected >= 0`);
+        return `uptime: ${d.uptime}s (server up ${formatUptime(d.uptime)})`;
+      }
+    },
+    {
+      id: '1.3',
+      name: 'Ollama Status via Proxy',
+      desc: 'GET /ollama/status → has "models" array (even if empty)',
+      run: async () => {
+        const r = await fetch(BASE + '/ollama/status');
+        if (r.status === 503) throw new Error('Ollama not running — start Ollama and retry');
+        const d = await r.json();
+        if (!Array.isArray(d.models)) throw new Error('"models" is not an array — ' + JSON.stringify(d).slice(0, 120));
+        return `models array found, ${d.models.length} model(s) loaded`;
+      }
+    },
+    {
+      id: '1.4',
+      name: 'Ollama Generate via Proxy',
+      desc: 'POST /ollama/generate { model: mistral:latest, prompt: … } → response non-empty (timeout: 180s)',
+      run: async () => {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 180000);
+        try {
+          const r = await fetch(BASE + '/ollama/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: 'mistral:latest', prompt: 'Reply with one word: hello', stream: false }),
+            signal: ctrl.signal
+          });
+          clearTimeout(tid);
+          if (r.status === 503) throw new Error('Ollama not running');
+          const d = await r.json();
+          if (!d.response || typeof d.response !== 'string' || d.response.trim() === '')
+            throw new Error('response field missing or empty — ' + JSON.stringify(d).slice(0, 200));
+          const preview = d.response.trim().slice(0, 80);
+          return `response: "${preview}"${d.response.length > 80 ? '…' : ''}`;
+        } catch (e) {
+          clearTimeout(tid);
+          if (e.name === 'AbortError') throw new Error('Timed out after 180s');
+          throw e;
+        }
+      }
+    },
+    {
+      id: '1.5',
+      name: 'Backward Compat Alias',
+      desc: 'GET /api/ollama/status → same "models" key as /ollama/status',
+      run: async () => {
+        const r = await fetch(BASE + '/api/ollama/status');
+        if (r.status === 503) throw new Error('Ollama not running — alias route returned 503');
+        const d = await r.json();
+        if (!Array.isArray(d.models)) throw new Error('"models" key missing on alias route');
+        return `alias works — ${d.models.length} model(s) via /api/ollama/status`;
+      }
+    }
+  ];
+
+  // ── Build DOM ───────────────────────────────────────
+  const list = document.getElementById('test-list');
+  TESTS.forEach(t => {
+    const el = document.createElement('div');
+    el.className = 'test-item';
+    el.id = 'test-' + t.id;
+    el.innerHTML = `
+      <div class="test-num">[${t.id}]</div>
+      <div class="test-body">
+        <div class="test-name">${t.name}</div>
+        <div class="test-desc">${t.desc}</div>
+        <div class="test-detail" id="detail-${t.id}"></div>
+      </div>
+      <span class="badge badge-idle" id="badge-${t.id}">IDLE</span>
+    `;
+    list.appendChild(el);
+  });
+
+  // ── Run ─────────────────────────────────────────────
+  async function runAll() {
+    const btn = document.getElementById('run-btn');
+    btn.disabled = true;
+    document.getElementById('summary').classList.remove('visible');
+    document.getElementById('status-text').textContent = 'Running…';
+
+    // reset all
+    TESTS.forEach(t => {
+      setTestState(t.id, 'idle', '', '');
+    });
+
+    let passed = 0;
+    for (const t of TESTS) {
+      setTestState(t.id, 'running', 'RUNNING…', '');
+      document.getElementById('status-text').textContent = `Running [${t.id}] ${t.name}…`;
+      try {
+        const detail = await t.run();
+        setTestState(t.id, 'pass', 'PASS', detail);
+        passed++;
+      } catch (e) {
+        setTestState(t.id, 'fail', 'FAIL', e.message);
+      }
+    }
+
+    showSummary(passed);
+    document.getElementById('status-text').textContent = `Done — ${passed}/${TESTS.length} passed`;
+    btn.disabled = false;
+  }
+
+  function setTestState(id, state, badgeText, detail) {
+    const item   = document.getElementById('test-' + id);
+    const badge  = document.getElementById('badge-' + id);
+    const detEl  = document.getElementById('detail-' + id);
+
+    item.className = 'test-item' + (state !== 'idle' && state !== 'running' ? ' ' + state : state === 'running' ? ' running' : '');
+    badge.textContent = badgeText || state.toUpperCase();
+    badge.className = 'badge badge-' + state;
+
+    if (detail) {
+      detEl.textContent = detail;
+      detEl.className = 'test-detail visible' + (state === 'fail' ? ' err' : '');
+    } else {
+      detEl.textContent = '';
+      detEl.className = 'test-detail';
+    }
+  }
+
+  function showSummary(passed) {
+    const total = TESTS.length;
+    const summary = document.getElementById('summary');
+    const score   = document.getElementById('summary-score');
+    const sub     = document.getElementById('summary-sub');
+
+    score.textContent = `${passed} / ${total} passed`;
+    score.className = 'summary-score ' + (
+      passed === total ? 'score-perfect' :
+      passed >= total - 1 ? 'score-good' : 'score-bad'
+    );
+    sub.textContent = passed === total
+      ? 'All infrastructure tests passed — server is ready.'
+      : `${total - passed} test(s) failed — check details above.`;
+    summary.classList.add('visible');
+  }
+
+  function formatUptime(s) {
+    if (s < 60) return s + 's';
+    if (s < 3600) return Math.floor(s / 60) + 'm ' + (s % 60) + 's';
+    return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'm';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "name": "ai-services",
+  "version": "1.0.0",
+  "description": "Shared AI microservices server — Zeev & Vitaly",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
