@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "PowerShell(Out-Null *)",
-      "PowerShell(Stop-Process *)"
+      "PowerShell(Stop-Process *)",
+      "Bash(git rm *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(openssl req *)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(netstat *)"
     ]
   }
 }

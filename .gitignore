@@ -1,7 +1,9 @@
 node_modules/
 config.js
 *.log
-*.pem
+# SSL certificates
+cert.pem
+key.pem
 .env
 
 # Large binary files — too big for GitHub

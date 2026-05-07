@@ -278,11 +278,29 @@ app.get('/api/tts/voices', (req, res) => {
   app.handle(req, res);
 });
 
-// ── START ────────────────────────────────────────────
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ ai-services running on http://localhost:${PORT}`);
-  console.log(`🌐 LAN: http://192.168.1.2:${PORT}`);
-  console.log(`🤖 Ollama proxy → ${OLLAMA_HOST}`);
-  console.log(`📊 Dashboard: http://localhost:${PORT}/`);
-  console.log(`🔍 Health: http://localhost:${PORT}/health`);
+// ── START HTTP + HTTPS ───────────────────────────────
+const HTTP_PORT = config.PORT || 8888;
+const HTTPS_PORT = config.HTTPS_PORT || 8889;
+
+app.listen(HTTP_PORT, '0.0.0.0', () => {
+  console.log(`✅ ai-services HTTP  → http://localhost:${HTTP_PORT}`);
+  console.log(`🌐 LAN HTTP          → http://192.168.1.2:${HTTP_PORT}`);
 });
+
+try {
+  const sslOptions = {
+    key: fs.readFileSync(path.join(__dirname, 'key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, 'cert.pem'))
+  };
+  https.createServer(sslOptions, app).listen(HTTPS_PORT, '0.0.0.0', () => {
+    console.log(`🔒 ai-services HTTPS → https://localhost:${HTTPS_PORT}`);
+    console.log(`🌐 LAN HTTPS         → https://192.168.1.2:${HTTPS_PORT}`);
+    console.log(`🤖 Ollama proxy      → ${OLLAMA_HOST}`);
+    console.log(`📊 Dashboard         → https://localhost:${HTTPS_PORT}/`);
+    console.log(`🔍 Health            → https://localhost:${HTTPS_PORT}/health`);
+  });
+} catch(e) {
+  console.log(`⚠️  HTTPS skipped — cert.pem/key.pem not found`);
+  console.log(`🤖 Ollama proxy → ${OLLAMA_HOST}`);
+  console.log(`📊 Dashboard    → http://localhost:${HTTP_PORT}/`);
+}
