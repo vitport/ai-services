@@ -3,3 +3,11 @@ config.js
 *.log
 *.pem
 .env
+
+# Large binary files — too big for GitHub
+*.onnx
+*.exe
+*.dll
+*.ort
+espeak-ng-data/
+piper_phonemize.dll
