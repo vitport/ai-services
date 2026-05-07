@@ -6,6 +6,7 @@ config.js
 
 # Large binary files — too big for GitHub
 *.onnx
+*.onnx.json
 *.exe
 *.dll
 *.ort
