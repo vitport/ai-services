@@ -9,7 +9,8 @@
       "Bash(git push *)",
       "Bash(openssl req *)",
       "PowerShell(Get-Process *)",
-      "PowerShell(netstat *)"
+      "PowerShell(netstat *)",
+      "PowerShell(Start-Process powershell -Verb RunAs -ArgumentList \"-Command Import-Certificate -FilePath 'C:\\\\Users\\\\Vit\\\\Desktop\\\\ai-services\\\\cert.pem' -CertStoreLocation 'cert:\\\\LocalMachine\\\\Root'; Read-Host 'Press Enter to close'\" -Wait)"
     ]
   }
 }
