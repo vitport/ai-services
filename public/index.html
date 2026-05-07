@@ -269,7 +269,7 @@
 
     <div class="card" id="card-config">
       <div class="card-title">Config</div>
-      <div class="card-value">Port: <span style="color:#e94560" id="cfg-port">12345</span></div>
+      <div class="card-value">Port: <span style="color:#e94560" id="cfg-port">—</span></div>
       <div class="card-value" style="font-size:0.82rem" id="cfg-ollama">Ollama: —</div>
     </div>
 
@@ -340,6 +340,7 @@
       document.getElementById('srv-version').textContent = 'ai-services v' + (d.version || '?');
       document.getElementById('srv-uptime').textContent = 'uptime: ' + formatUptime(d.uptime || 0);
       document.getElementById('cfg-ollama').textContent = 'Ollama: ' + (d.ollama || '—');
+      document.getElementById('cfg-port').textContent = window.location.port || '8888';
       const badge = document.getElementById('srv-badge');
       badge.textContent = 'ONLINE';
       badge.className = 'badge badge-online';
