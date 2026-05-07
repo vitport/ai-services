@@ -311,17 +311,17 @@
   <div class="projects-grid">
     <div class="project-card">
       <div class="project-name">📖 Recipe Book</div>
-      <div class="project-port">Port: 3000 (typical)</div>
+      <div class="project-port">Port: 8080 / 8443</div>
       <span class="badge-ready">Ready to migrate</span>
     </div>
     <div class="project-card">
       <div class="project-name">⏱ Timedox AI</div>
-      <div class="project-port">Port: 3001 (typical)</div>
+      <div class="project-port">Port: 8080 / 8443</div>
       <span class="badge-ready">Ready to migrate</span>
     </div>
     <div class="project-card">
       <div class="project-name">👥 HR Project</div>
-      <div class="project-port">Port: 3002 (typical)</div>
+      <div class="project-port">Port: 8082</div>
       <span class="badge-ready">Ready to migrate</span>
     </div>
   </div>
@@ -331,7 +331,7 @@
 <footer>Zeev &amp; Vitaly — May 2026</footer>
 
 <script>
-  const BASE = 'http://localhost:12345';
+  const BASE = window.location.origin;
 
   async function loadHealth() {
     try {
