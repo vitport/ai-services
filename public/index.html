@@ -296,6 +296,12 @@
         <tr><td><span class="method-post">POST</span></td><td class="route-path">/api/ollama/release <span class="route-note">alias</span></td><td>Backward compat — Recipe Book / Timedox / HR</td></tr>
         <tr><td><span class="method-get">GET</span></td><td class="route-path">/api/ollama/host <span class="route-note">alias</span></td><td>Returns configured Ollama host URL</td></tr>
         <tr><td><span class="method-get">GET</span></td><td class="route-path">/api/config/search</td><td>Search API keys for SearchEngine.js</td></tr>
+        <tr><td><span class="method-post">POST</span></td><td class="route-path">/search</td><td>Web search via Serper + optional Mistral summary</td></tr>
+        <tr><td><span class="method-get">GET</span></td><td class="route-path">/api/search <span class="route-note">alias</span></td><td>Backward compat GET search (redirects to POST /search)</td></tr>
+        <tr><td><span class="method-get">GET</span></td><td class="route-path">/voice/voices</td><td>List available Piper TTS voice models</td></tr>
+        <tr><td><span class="method-post">POST</span></td><td class="route-path">/voice/speak</td><td>Text-to-speech via Piper — returns base64 raw audio</td></tr>
+        <tr><td><span class="method-get">GET</span></td><td class="route-path">/api/tts/voices <span class="route-note">alias</span></td><td>Backward compat — alias for /voice/voices</td></tr>
+        <tr><td><span class="method-post">POST</span></td><td class="route-path">/api/tts/speak <span class="route-note">alias</span></td><td>Backward compat — alias for /voice/speak</td></tr>
       </tbody>
     </table>
   </div>

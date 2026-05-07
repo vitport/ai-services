@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Services — Test Suite (Series 1)</title>
+  <title>AI Services — Test Suite (Series 1–3)</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -192,14 +192,14 @@
 
 <header>
   <h1>🧪 AI Services — Test Suite</h1>
-  <span class="series-badge">SERIES 1 — Infrastructure</span>
+  <span class="series-badge">SERIES 1–3 — All Services</span>
 </header>
 
 <main>
   <div class="top-bar">
     <button class="run-btn" id="run-btn" onclick="runAll()">▶ Run All Tests</button>
     <a class="dashboard-btn" href="http://localhost:12345/">📊 View Dashboard</a>
-    <span class="status-text" id="status-text">5 tests ready</span>
+    <span class="status-text" id="status-text">13 tests ready</span>
   </div>
 
   <div class="test-list" id="test-list"></div>
@@ -292,6 +292,173 @@
         if (!Array.isArray(d.models)) throw new Error('"models" key missing on alias route');
         return `alias works — ${d.models.length} model(s) via /api/ollama/status`;
       }
+    },
+
+    // ── SERIES 2 — Search Service ────────────────────
+    {
+      id: '2.1',
+      name: 'Search — Basic Query',
+      desc: 'POST /search { query: "chicken recipe", summarize: false } → results array length > 0',
+      run: async () => {
+        const r = await fetch(BASE + '/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: 'chicken recipe', summarize: false })
+        });
+        if (r.status === 503) {
+          const d = await r.json();
+          throw new Error(d.error || 'Search unavailable (503)');
+        }
+        const d = await r.json();
+        if (!Array.isArray(d.results)) throw new Error('"results" is not an array — ' + JSON.stringify(d).slice(0, 120));
+        if (d.results.length === 0) throw new Error('results array is empty — Serper returned no hits');
+        return `${d.results.length} result(s) for "${d.query}", total hits: ${d.total}`;
+      }
+    },
+    {
+      id: '2.2',
+      name: 'Search Returns Snippets',
+      desc: 'POST /search → results[0] has title, snippet, link fields',
+      run: async () => {
+        const r = await fetch(BASE + '/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: 'chicken recipe', summarize: false })
+        });
+        if (r.status === 503) {
+          const d = await r.json();
+          throw new Error(d.error || 'Search unavailable (503)');
+        }
+        const d = await r.json();
+        if (!Array.isArray(d.results) || d.results.length === 0) throw new Error('No results to inspect');
+        const first = d.results[0];
+        const missing = ['title','snippet','link'].filter(k => !first[k]);
+        if (missing.length > 0) throw new Error(`Missing fields: ${missing.join(', ')} — got: ${JSON.stringify(first).slice(0, 120)}`);
+        return `title: "${first.title.slice(0, 60)}" | link: ${first.link.slice(0, 50)}`;
+      }
+    },
+    {
+      id: '2.3',
+      name: 'Search with Mistral Summary',
+      desc: 'POST /search { query: "pasta recipe", summarize: true } → summary is non-empty string (timeout: 60s)',
+      run: async () => {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 60000);
+        try {
+          const r = await fetch(BASE + '/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: 'pasta recipe', summarize: true }),
+            signal: ctrl.signal
+          });
+          clearTimeout(tid);
+          if (r.status === 503) {
+            const d = await r.json();
+            throw new Error(d.error || 'Search unavailable (503)');
+          }
+          const d = await r.json();
+          if (!d.summary || typeof d.summary !== 'string' || d.summary.trim() === '')
+            throw new Error('summary field missing or empty — Mistral may not be running');
+          return `summary (${d.summary.length} chars): "${d.summary.trim().slice(0, 100)}${d.summary.length > 100 ? '…' : ''}"`;
+        } catch(e) {
+          clearTimeout(tid);
+          if (e.name === 'AbortError') throw new Error('Timed out after 60s — Mistral may be busy');
+          throw e;
+        }
+      }
+    },
+    {
+      id: '2.4',
+      name: 'Search Backward Compat',
+      desc: 'GET /api/search?q=test → JSON with "query" field matching "test"',
+      run: async () => {
+        const r = await fetch(BASE + '/api/search?q=test');
+        const d = await r.json();
+        if (d.query !== 'test') throw new Error(`query field = "${d.query}", expected "test" — got: ${JSON.stringify(d).slice(0, 120)}`);
+        return `query echo: "${d.query}" | message: "${(d.message || '').slice(0, 60)}"`;
+      }
+    },
+
+    // ── SERIES 3 — Voice / TTS Service ───────────────
+    {
+      id: '3.1',
+      name: 'Voice — List Voices',
+      desc: 'GET /voice/voices → voices is array (may be empty if no models installed)',
+      run: async () => {
+        const r = await fetch(BASE + '/voice/voices');
+        if (r.status === 503) {
+          const d = await r.json();
+          throw new Error(d.error || 'Voice service unavailable (503)');
+        }
+        const d = await r.json();
+        if (!Array.isArray(d.voices)) throw new Error('"voices" is not an array — ' + JSON.stringify(d).slice(0, 120));
+        return `${d.count} voice model(s) found${d.voices.length > 0 ? ': ' + d.voices.map(v => v.id).join(', ') : ' (voices dir exists but empty)'}`;
+      }
+    },
+    {
+      id: '3.2',
+      name: 'Voice — Speak (TTS)',
+      desc: 'POST /voice/speak { text: "Hello world" } → success=true, audio is non-empty base64',
+      run: async () => {
+        const r = await fetch(BASE + '/voice/speak', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: 'Hello world' })
+        });
+        if (r.status === 503) {
+          const d = await r.json();
+          throw new Error(d.error || 'Voice service unavailable — piper.exe or voices missing');
+        }
+        if (r.status === 500) {
+          const d = await r.json();
+          throw new Error('TTS failed: ' + (d.detail || d.error));
+        }
+        const d = await r.json();
+        if (!d.success) throw new Error('success !== true — ' + JSON.stringify(d).slice(0, 120));
+        if (!d.audio || typeof d.audio !== 'string' || d.audio.length === 0)
+          throw new Error('audio field missing or empty');
+        const bytes = Math.round(d.audio.length * 0.75);
+        return `success, voice: "${d.voice}", raw audio: ~${(bytes/1024).toFixed(1)} KB base64`;
+      }
+    },
+    {
+      id: '3.3',
+      name: 'Voice Alias — Voices',
+      desc: 'GET /api/tts/voices → same voices array as /voice/voices',
+      run: async () => {
+        const r = await fetch(BASE + '/api/tts/voices');
+        if (r.status === 503) {
+          const d = await r.json();
+          throw new Error(d.error || 'Voice alias unavailable (503)');
+        }
+        const d = await r.json();
+        if (!Array.isArray(d.voices)) throw new Error('"voices" not an array on alias route');
+        return `alias works — ${d.count} voice(s) via /api/tts/voices`;
+      }
+    },
+    {
+      id: '3.4',
+      name: 'Voice Alias — Speak',
+      desc: 'POST /api/tts/speak { text: "Test" } → same response shape as /voice/speak',
+      run: async () => {
+        const r = await fetch(BASE + '/api/tts/speak', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: 'Test' })
+        });
+        if (r.status === 503) {
+          const d = await r.json();
+          throw new Error(d.error || 'Voice alias unavailable — piper.exe or voices missing');
+        }
+        if (r.status === 500) {
+          const d = await r.json();
+          throw new Error('TTS alias failed: ' + (d.detail || d.error));
+        }
+        const d = await r.json();
+        if (!d.success) throw new Error('success !== true on alias route');
+        if (!d.audio || d.audio.length === 0) throw new Error('audio empty on alias route');
+        return `alias works — audio: ~${(Math.round(d.audio.length * 0.75)/1024).toFixed(1)} KB via /api/tts/speak`;
+      }
     }
   ];
 
@@ -373,7 +540,7 @@
       passed >= total - 1 ? 'score-good' : 'score-bad'
     );
     sub.textContent = passed === total
-      ? 'All infrastructure tests passed — server is ready.'
+      ? 'All tests passed — server is ready.'
       : `${total - passed} test(s) failed — check details above.`;
     summary.classList.add('visible');
   }
