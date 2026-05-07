@@ -3,7 +3,7 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
+const { execSync, spawn } = require('child_process');
 let config;
 try { config = require('./config'); } catch(e) { config = require('./config.example'); }
 
@@ -276,6 +276,71 @@ app.post('/api/tts/speak', (req, res) => {
 app.get('/api/tts/voices', (req, res) => {
   req.url = '/voice/voices';
   app.handle(req, res);
+});
+
+// ── CONSOLE / PROJECT CONTROL ────────────────────────
+
+const PROJECTS = {
+  'recipe-book': { path: 'C:\\Users\\Vit\\Desktop\\recipe-book', port: 8080 },
+  'timedox':     { path: 'C:\\Users\\Vit\\Desktop\\timedox-qa',  port: 8080 },
+  'hr':          { path: 'C:\\Users\\Vit\\Desktop\\hr',           port: 8082 }
+};
+
+app.get('/console/status', async (req, res) => {
+  const pingPort = (port) => new Promise((resolve) => {
+    const r = http.get(`http://localhost:${port}/health`, (resp) => {
+      resolve(resp.statusCode === 200);
+    });
+    r.on('error', () => resolve(false));
+    r.setTimeout(2000, () => { r.destroy(); resolve(false); });
+  });
+
+  const [recipebook, timedox, hr, ollama] = await Promise.all([
+    pingPort(8080),
+    pingPort(8080),
+    pingPort(8082),
+    pingPort(11434)
+  ]);
+
+  res.json({
+    projects: {
+      'recipe-book': { online: recipebook, port: 8080 },
+      'timedox':     { online: timedox,    port: 8080 },
+      'hr':          { online: hr,          port: 8082 }
+    },
+    ollama: { online: ollama, port: 11434 }
+  });
+});
+
+app.post('/console/stop/:project', (req, res) => {
+  const project = PROJECTS[req.params.project];
+  if (!project) return res.status(404).json({ error: 'Unknown project' });
+  try {
+    execSync(
+      `FOR /F "tokens=5" %P IN ('netstat -ano ^| findstr :${project.port}') DO taskkill /PID %P /F`,
+      { shell: 'cmd.exe' }
+    );
+    res.json({ success: true, message: `${req.params.project} stopped` });
+  } catch(e) {
+    res.json({ success: true, message: 'Already stopped' });
+  }
+});
+
+app.post('/console/restart/:project', (req, res) => {
+  const project = PROJECTS[req.params.project];
+  if (!project) return res.status(404).json({ error: 'Unknown project' });
+  try {
+    execSync(
+      `FOR /F "tokens=5" %P IN ('netstat -ano ^| findstr :${project.port}') DO taskkill /PID %P /F`,
+      { shell: 'cmd.exe' }
+    );
+  } catch(e) {}
+  setTimeout(() => {
+    spawn('cmd.exe', ['/c', `cd /d "${project.path}" && npm start`], {
+      detached: true, stdio: 'ignore', shell: true
+    }).unref();
+  }, 1000);
+  res.json({ success: true, message: `${req.params.project} restarting...` });
 });
 
 // ── START HTTP + HTTPS ───────────────────────────────
